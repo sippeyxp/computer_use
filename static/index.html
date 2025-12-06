@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Use - AI Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Computer Use - AI Assistant</h1>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Initializing...</span>
+            </div>
+        </header>
+
+        <!-- Setup Phase -->
+        <div id="setupPhase" class="phase active">
+            <div class="setup-section">
+                <h2>1. Configure AI Model</h2>
+                <div class="model-selection">
+                    <label>
+                        <input type="radio" name="aiProvider" value="openai" checked>
+                        <span>OpenAI (GPT-4 Vision)</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="aiProvider" value="gemini">
+                        <span>Google Gemini</span>
+                    </label>
+                </div>
+                <div class="input-group">
+                    <label for="modelNameInput">Model Name:</label>
+                    <input type="text" id="modelNameInput" class="text-input" placeholder="e.g., gpt-4-vision-preview, gemini-1.5-pro">
+                    <small class="input-hint">Enter the exact model name from your provider</small>
+                </div>
+                <div class="input-group">
+                    <label for="openaiKeyInput">OpenAI API Key:</label>
+                    <input type="password" id="openaiKeyInput" class="text-input" placeholder="sk-...">
+                    <small class="input-hint">Leave empty to use environment variable</small>
+                </div>
+                <div class="input-group">
+                    <label for="geminiKeyInput">Gemini API Key:</label>
+                    <input type="password" id="geminiKeyInput" class="text-input" placeholder="...">
+                    <small class="input-hint">Leave empty to use environment variable</small>
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <h2>2. Define Your Task</h2>
+                <textarea id="taskDescription" placeholder="Describe what you want the AI to do...&#10;Example: 'Fill out the contact form with my information'"></textarea>
+            </div>
+
+            <div class="setup-section power-user-section">
+                <h2>
+                    <span>Power User Options</span>
+                    <button type="button" id="togglePowerUserBtn" class="btn btn-secondary btn-small">Show</button>
+                </h2>
+                <div id="powerUserOptions" style="display: none;">
+                    <div class="input-group">
+                        <label>
+                            <input type="checkbox" id="showRawOutputCheckbox">
+                            <span>Show raw model output in conversation log</span>
+                        </label>
+                        <small class="input-hint">When enabled, displays the unparsed AI response before the action is extracted.</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="thinkingBudgetInput">Thinking Budget (Gemini only):</label>
+                        <input type="number" id="thinkingBudgetInput" class="text-input" min="0" max="1000000" placeholder="e.g., 8192">
+                        <small class="input-hint">Maximum thinking tokens for Gemini models. Leave empty for default.</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="mediaResolutionSelect">Media Resolution:</label>
+                        <select id="mediaResolutionSelect" class="text-input">
+                            <option value="">Default</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                        <small class="input-hint">Image resolution sent to the AI model. Higher resolution uses more tokens.</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="initialPromptInput">Initial Prompt:</label>
+                        <textarea id="initialPromptInput" class="text-input prompt-input" rows="4" placeholder="Custom initial prompt sent to the AI when starting the task..."></textarea>
+                        <small class="input-hint">This prompt is sent once at the start. Use {task} placeholder to include the task description.</small>
+                    </div>
+                    <div class="input-group">
+                        <label for="perStepPromptInput">Per-Step Prompt:</label>
+                        <textarea id="perStepPromptInput" class="text-input prompt-input" rows="4" placeholder="Custom prompt sent with each screenshot..."></textarea>
+                        <small class="input-hint">This prompt is sent with each screenshot. Use {task} placeholder to include the task description.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <h2>3. Select Area of Interest</h2>
+                <p>Click "Capture Screen" to take a screenshot, then select the area you want the AI to focus on.</p>
+                <button id="captureBtn" class="btn btn-primary">Capture Screen</button>
+                <div id="screenshotContainer" class="screenshot-container" style="display: none;">
+                    <canvas id="screenshotCanvas"></canvas>
+                    <div id="cropOverlay" class="crop-overlay"></div>
+                    <div class="crop-info">
+                        <span>Click and drag to select area</span>
+                        <button id="confirmAreaBtn" class="btn btn-success" style="display: none;">Confirm Area</button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="startTaskBtn" class="btn btn-primary btn-large" disabled>Start Task</button>
+        </div>
+
+        <!-- Conversation Phase -->
+        <div id="conversationPhase" class="phase">
+            <div class="conversation-header">
+                <h2>Task Execution</h2>
+                <button id="pauseBtn" class="btn btn-secondary">Pause</button>
+                <button id="stopBtn" class="btn btn-danger">Stop</button>
+            </div>
+
+            <div class="conversation-container">
+                <div id="conversationLog" class="conversation-log"></div>
+                
+                <!-- Ask for Help Modal -->
+                <div id="helpModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h3>AI Needs Your Help</h3>
+                        <p id="helpMessage">The AI has encountered an issue and needs your assistance.</p>
+                        <div id="helpDetails" class="help-details"></div>
+                        <div class="modal-actions">
+                            <button id="resumeBtn" class="btn btn-primary">Resume</button>
+                            <button id="cancelTaskBtn" class="btn btn-secondary">Cancel Task</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+
